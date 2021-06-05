@@ -1,0 +1,14 @@
+[Unit]
+Description=Programa de registro de velocidades de lineas de tubo
+Requires=gunicorn.service
+After=network.target
+
+[Service]
+User=paco
+WorkingDirectory=/home/paco/velocidad
+Environment="PATH=/home/paco/velocidad/venv/bin"
+ExecStart=/home/paco/velocidad/venv/bin/python velocidad.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
