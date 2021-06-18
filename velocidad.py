@@ -39,6 +39,7 @@ def get_speed(linea):
             except:
                 plc_conectado = False
                 arranque = True
+                print(f'Máquina {siglas} Error de conexión')
 
         if (plc_conectado):
             try:
