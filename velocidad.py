@@ -12,7 +12,7 @@ SERVER = 'http://10.128.100.242:8000/'
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
 def get_speed(linea):
-    plc_conectado = False
+    # plc_conectado = False
     arranque = True
     v_actual = 0
     v_registro = None
@@ -30,18 +30,18 @@ def get_speed(linea):
     plc = snap7.client.Client()
 
     while (True):
-        if (not plc_conectado):
+        if plc.get_connected() == False:
             try:
                 plc.connect(IP, RACK, SLOT)
                 state = plc.get_cpu_state()
                 print(f'Máquina {siglas} State: {state}')
-                plc_conectado = True
+                # plc_conectado = True
             except:
-                plc_conectado = False
+                # plc_conectado = False
                 arranque = True
                 print(f'Máquina {siglas} Error de conexión')
 
-        if (plc_conectado):
+        else:
             try:
                 v_raw = plc.db_read(DB, DW, 4)
                 v_real = struct.unpack('>f', struct.pack('4B', *v_raw))[0]
@@ -67,7 +67,7 @@ def get_speed(linea):
                         v_registro_anterior = v_registro
             except:
                 plc.disconnect()
-                plc_conectado = False
+                # plc_conectado = False
                 hoy = date.today()
                 ahora = datetime.now()
                 dato = {
