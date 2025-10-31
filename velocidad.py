@@ -1,4 +1,5 @@
 import snap7
+from snap7.util import get_real
 import struct
 import threading
 import requests
@@ -6,8 +7,8 @@ import time
 from datetime import date, datetime
 
 # Listado de máquinas con control de velocidad
-SERVER = 'http://10.128.100.242:8000/'
-# SERVER = 'http://localhost:8000/'
+# SERVER = 'http://10.128.100.242:8000/'
+SERVER = 'http://localhost:8000/'
 # HEADERS = {'Authorization': 'token 99c11d78d18c18c99247a0a50ede33d8e223767a'}
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
@@ -15,8 +16,17 @@ def get_speed(linea):
     # plc_conectado = False
     arranque = True
     v_actual = 0
+    hf_pot_actual = 0
+    hf_freq_actual = 0
+    welding_press_actual = 0
     v_registro = None
     v_registro_anterior = None
+    hf_pot_registro = None
+    hf_pot_registro_anterior = None
+    hf_freq_registro =None
+    hf_freq_registro_anterior = None
+    welding_press_registro = None
+    welding_press_registro_anterior = None
     datos = []
 
     IP = linea['ip'] 
@@ -24,6 +34,7 @@ def get_speed(linea):
     SLOT = linea['slot']
     DB = linea['db']
     DW = linea['dw'] 
+    NWORDS = linea['nwords']
     siglas = linea['zona']['siglas']
     zona = linea['zona']['id']
 
@@ -43,28 +54,61 @@ def get_speed(linea):
 
         else:
             try:
-                v_raw = plc.db_read(DB, DW, 4)
-                v_real = struct.unpack('>f', struct.pack('4B', *v_raw))[0]
-                inc_velocidad = abs(v_actual - v_real)
+                fromPLC = plc.db_read(DB, DW, NWORDS)
+                v_real = get_real(fromPLC, 0)
+                if (NWORDS > 4):
+                    hf_power = get_real(fromPLC, 4)
+                    hf_freq = get_real(fromPLC, 8)
+                    welding_press = get_real(fromPLC, 12)
+                else:
+                    hf_power = 0
+                    hf_freq = 0
+                    welding_press = 0
 
-                if (inc_velocidad > 1.5 or arranque):
+                # v_real = struct.unpack('>f', struct.pack('4B', *v_raw))[0]
+                inc_velocidad = abs(v_actual - v_real)
+                inc_hf_power = abs(hf_pot_actual - hf_power)
+                inc_hf_freq = abs(hf_freq_actual - hf_freq)
+                inc_welding_press = abs(welding_press_actual - welding_press)
+
+                if (inc_velocidad > 1.5 or inc_hf_power > 5 or inc_hf_freq > 5 or inc_welding_press > 5 or arranque):
                     v_actual = v_real
-                    if (v_real > 9.5):
+                    hf_pot_actual = hf_power
+                    hf_freq_actual = hf_freq
+                    welding_press_actual = welding_press
+                    if (v_real > 9.5): # Automatico
                         v_registro = v_real
-                    else:
+                        hf_pot_registro = hf_pot_actual
+                        hf_freq_registro = hf_freq_actual
+                        welding_press_registro = welding_press_actual
+                    else: # Manual no se registra
                         v_registro = 0.0
+                        hf_pot_registro = 0.0
+                        hf_freq_registro = 0.0
+                        welding_press_registro = 0.0
+                    
                     hoy = date.today()
                     ahora = datetime.now()
                     dato = {
                             'fecha': hoy.strftime("%Y-%m-%d"),
                             'hora': ahora.strftime("%H:%M:%S"),
                             'zona': zona,
-                            'velocidad': v_registro
+                            'velocidad': v_registro,
+                            'potencia': hf_pot_registro,
+                            'frecuencia': hf_freq_registro,
+                            'presion': welding_press_registro
                         }
-                    if (v_registro != v_registro_anterior or arranque):
+                    if (v_registro != v_registro_anterior or
+                        hf_pot_registro != hf_pot_registro_anterior or
+                        hf_freq_registro != hf_freq_registro_anterior or
+                        welding_press_registro != welding_press_registro_anterior or
+                        arranque):
                         arranque = False    
                         datos.append(dato)
                         v_registro_anterior = v_registro
+                        hf_pot_registro_anterior = hf_pot_registro
+                        hf_freq_registro_anterior = hf_freq_registro
+                        welding_press_registro_anterior = welding_press_registro
             except:
                 plc.disconnect()
                 # plc_conectado = False
