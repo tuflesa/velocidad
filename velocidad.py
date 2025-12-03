@@ -1,6 +1,5 @@
 import snap7
 from snap7.util import get_real
-import struct
 import threading
 import requests
 import time
@@ -13,7 +12,8 @@ SERVER = 'http://10.128.100.242:8000/'
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
 def get_speed(linea):
-    # plc_conectado = False
+    MAX_ERRORES = 3
+
     arranque = True
     v_actual = 0
     hf_pot_actual = 0
@@ -28,6 +28,9 @@ def get_speed(linea):
     welding_press_registro = None
     welding_press_registro_anterior = None
     datos = []
+    periodos = []
+    n_errores = 0
+    
 
     IP = linea['ip'] 
     RACK = linea['rack'] 
@@ -46,9 +49,7 @@ def get_speed(linea):
                 plc.connect(IP, RACK, SLOT)
                 state = plc.get_cpu_state()
                 print(f'Máquina {siglas} State: {state}')
-                # plc_conectado = True
             except:
-                # plc_conectado = False
                 arranque = True
                 print(f'Máquina {siglas} Error de conexión')
 
@@ -65,7 +66,6 @@ def get_speed(linea):
                     hf_freq = 0
                     welding_press = 0
 
-                # v_real = struct.unpack('>f', struct.pack('4B', *v_raw))[0]
                 inc_velocidad = abs(v_actual - v_real)
                 inc_hf_power = abs(hf_pot_actual - hf_power)
                 inc_hf_freq = abs(hf_freq_actual - hf_freq)
@@ -76,7 +76,7 @@ def get_speed(linea):
                     hf_pot_actual = hf_power
                     hf_freq_actual = hf_freq
                     welding_press_actual = welding_press
-                    if (v_real > 9.5): # Automatico
+                    if (v_real > 9): # Automatico
                         v_registro = v_real
                         hf_pot_registro = hf_pot_actual
                         hf_freq_registro = hf_freq_actual
@@ -89,6 +89,7 @@ def get_speed(linea):
                     
                     hoy = date.today()
                     ahora = datetime.now()
+                    print(f'ahora: {ahora}')
                     dato = {
                             'fecha': hoy.strftime("%Y-%m-%d"),
                             'hora': ahora.strftime("%H:%M:%S"),
@@ -98,30 +99,48 @@ def get_speed(linea):
                             'frecuencia': hf_freq_registro,
                             'presion': welding_press_registro
                         }
+                    periodo = {
+                            'zona': zona,
+                            'fecha': hoy.strftime("%Y-%m-%d") + ' ' + ahora.strftime("%H:%M:%S") ,
+                            'velocidad': v_registro,
+                        }
+                        
                     if (v_registro != v_registro_anterior or
                         hf_pot_registro != hf_pot_registro_anterior or
                         hf_freq_registro != hf_freq_registro_anterior or
                         welding_press_registro != welding_press_registro_anterior or
                         arranque):
+
                         arranque = False    
                         datos.append(dato)
+                        periodos.append(periodo)
+
                         v_registro_anterior = v_registro
                         hf_pot_registro_anterior = hf_pot_registro
                         hf_freq_registro_anterior = hf_freq_registro
                         welding_press_registro_anterior = welding_press_registro
-            except:
+
+                n_errores = 0
+
+            except: # Perdida conexión PLC
                 plc.disconnect()
-                # plc_conectado = False
-                hoy = date.today()
-                ahora = datetime.now()
-                dato = {
-                        'fecha': hoy.strftime("%Y-%m-%d"),
-                        'hora': ahora.strftime("%H:%M:%S"),
-                        'zona': zona,
-                        'velocidad': -1
-                    }
-                datos.append(dato)
-                print(f'Añadir dato: {dato}')
+                n_errores += 1
+                if n_errores > MAX_ERRORES:
+                    hoy = date.today()
+                    ahora = datetime.now()
+                    dato = {
+                            'fecha': hoy.strftime("%Y-%m-%d"),
+                            'hora': ahora.strftime("%H:%M:%S"),
+                            'zona': zona,
+                            'velocidad': -1
+                        }
+                    periodo = {
+                                'zona': zona,
+                                'fecha': hoy.strftime("%Y-%m-%d") + ' ' + ahora.strftime("%H:%M:%S") ,
+                                'velocidad': -1, 
+                            }
+                    datos.append(dato)
+                    periodos.append(periodo)
         
         if (len(datos) > 0):
             try:
@@ -131,13 +150,20 @@ def get_speed(linea):
                     )
                 if(r.status_code == 201):
                     datos.pop(0)
-                    print(f'DB actualizada {siglas}')
             except:
-                print('Error al escribir DB')
-            print(f'Datos pendientes de enviar: {len(datos)}')
+                print('Registros: Error al escribir DB')
+
+        if (len(periodos) > 0):
+            try:
+                r = requests.post(SERVER + 'api/velocidad/nuevo_periodo/',
+                                 data=periodos[0],
+                                 headers = HEADERS)
+                if(r.status_code == 201):
+                    periodos.pop(0)
+            except:
+                print('Periodos: Error al escribir en DB')
 
         time.sleep(20)    
-    # threading.Timer(1,get_speed, [automata, maquina, on]).start()
 
 try:
     lineas = requests.get(SERVER + 'api/velocidad/lineas/',
