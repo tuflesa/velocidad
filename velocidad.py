@@ -3,7 +3,7 @@ from snap7.util import get_real
 import threading
 import requests
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 # Listado de máquinas con control de velocidad
 SERVER = 'http://10.128.100.242:8000/'
@@ -31,6 +31,12 @@ def get_speed(linea):
     periodos = []
     n_errores = 0
     
+    horario = None
+    tnp = None
+    inicio_prod = None
+    fin_prod = None
+    leerhorario = True
+    es_festivo = None
 
     IP = linea['ip'] 
     RACK = linea['rack'] 
@@ -89,7 +95,6 @@ def get_speed(linea):
                     
                     hoy = date.today()
                     ahora = datetime.now()
-                    print(f'ahora: {ahora}')
                     dato = {
                             'fecha': hoy.strftime("%Y-%m-%d"),
                             'hora': ahora.strftime("%H:%M:%S"),
@@ -103,6 +108,7 @@ def get_speed(linea):
                             'zona': zona,
                             'fecha': hoy.strftime("%Y-%m-%d") + ' ' + ahora.strftime("%H:%M:%S") ,
                             'velocidad': v_registro,
+                            'tnp': tnp
                         }
                         
                     if (v_registro != v_registro_anterior or
@@ -138,10 +144,70 @@ def get_speed(linea):
                                 'zona': zona,
                                 'fecha': hoy.strftime("%Y-%m-%d") + ' ' + ahora.strftime("%H:%M:%S") ,
                                 'velocidad': -1, 
+                                'tnp': tnp
                             }
+                    print('perdida de conexión ', periodo)
                     datos.append(dato)
                     periodos.append(periodo)
-        
+
+        if (not horario or leerhorario):
+            try:
+                hoy = date.today().strftime("%Y-%m-%d")
+                horario = requests.get(SERVER + 'api/velocidad/horariodia/?fecha=' + hoy + '&zona=' + str(zona),
+                    headers = HEADERS
+                )
+                horario = horario.json()
+                leerhorario = False
+                fecha_str = horario[0]['fecha']
+                hora_str = horario[0]['inicio']
+                es_festivo = horario[0]['es_festivo']
+                inicio_prod = datetime.strptime(f"{fecha_str} {hora_str}", "%Y-%m-%d %H:%M:%S")
+                hora_str = horario[0]['fin']
+                fin_prod = datetime.strptime(f"{fecha_str} {hora_str}", "%Y-%m-%d %H:%M:%S")
+                if (fin_prod <= inicio_prod) :
+                    fin_prod += timedelta(days=1)
+                ahora = datetime.now()
+                if(ahora >= inicio_prod and ahora <= fin_prod and tnp == None): tnp = False
+                else: tnp = True
+                print('lectura horario ok', horario)
+
+            except:
+                print('Horario: Sin conexion DB')
+                horario = None
+                leerhorario = True
+
+        if (horario and (not es_festivo)):  
+            ahora = datetime.now()
+            if(v_actual == 0 and (not tnp) and fin_prod <= ahora):
+                tnp = True
+                periodo = {
+                    'zona': zona,
+                    'fecha': fin_prod ,
+                    'velocidad': 0.0,
+                    'tnp': tnp,
+                }
+                print('fin del tiempo de producción', periodo)
+                periodos.append(periodo)
+
+            if(v_actual == 0 and tnp and inicio_prod <= ahora and fin_prod >= ahora):
+                tnp = False
+                periodo = {
+                    'zona': zona,
+                    'fecha': inicio_prod,
+                    'velocidad': 0.0,
+                    'tnp': tnp,
+                }
+                print('En tiempo de produccion', periodo)
+                periodos.append(periodo)
+
+        if(horario):
+            ahora = datetime.now()
+            # print(f'zona {zona} horario {horario} tnp {tnp}')
+            if (inicio_prod.date() != ahora.date() and fin_prod < ahora): 
+                leerhorario = True
+                print('volver a leer horario')
+
+
         if (len(datos) > 0):
             try:
                 r = requests.post(SERVER + 'api/velocidad/registro/', 
@@ -155,6 +221,7 @@ def get_speed(linea):
 
         if (len(periodos) > 0):
             try:
+                print(periodos[0])
                 r = requests.post(SERVER + 'api/velocidad/nuevo_periodo/',
                                  data=periodos[0],
                                  headers = HEADERS)
@@ -172,7 +239,7 @@ try:
     lineas = lineas.json()
     print(lineas)
 except:
-    print('Sin conexion DB')
+    print('Lineas: Sin conexion DB')
     lineas = []
 
 
