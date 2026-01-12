@@ -95,6 +95,11 @@ def get_speed(linea):
                     
                     hoy = date.today()
                     ahora = datetime.now()
+
+                    if (horario!=None):
+                        if(ahora >= inicio_prod and ahora <= fin_prod): tnp = False
+                        else: tnp = True
+
                     dato = {
                             'fecha': hoy.strftime("%Y-%m-%d"),
                             'hora': ahora.strftime("%H:%M:%S"),
@@ -178,7 +183,7 @@ def get_speed(linea):
 
         if (horario and (not es_festivo)):  
             ahora = datetime.now()
-            if(v_actual == 0 and (not tnp) and fin_prod <= ahora):
+            if(v_actual < 0.1 and (not tnp) and fin_prod <= ahora): # v<0.1 porque a veces la velocidad es 0.001 por ejemplo y no funciona bien, aunque esto se puede arreglar en el plc para forzar que se 0.0
                 tnp = True
                 periodo = {
                     'zona': zona,
@@ -189,7 +194,7 @@ def get_speed(linea):
                 print('fin del tiempo de producción', periodo)
                 periodos.append(periodo)
 
-            if(v_actual == 0 and tnp and inicio_prod <= ahora and fin_prod >= ahora):
+            if(v_actual < 0.1 and tnp and inicio_prod <= ahora and fin_prod >= ahora): # ver el comentario de arriba
                 tnp = False
                 periodo = {
                     'zona': zona,
@@ -200,7 +205,8 @@ def get_speed(linea):
                 print('En tiempo de produccion', periodo)
                 periodos.append(periodo)
 
-        if(horario):
+        # Actualizacion del horario
+        if(horario): 
             ahora = datetime.now()
             # print(f'zona {zona} horario {horario} tnp {tnp}')
             if (inicio_prod.date() != ahora.date() and fin_prod < ahora): 
