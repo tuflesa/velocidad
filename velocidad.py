@@ -20,6 +20,7 @@ def get_speed(linea):
     hf_freq_actual = 0
     welding_press_actual = 0
     v_registro = None
+    v_real = None
     v_registro_anterior = None
     hf_pot_registro = None
     hf_pot_registro_anterior = None
@@ -183,7 +184,7 @@ def get_speed(linea):
                 horario = None
                 leerhorario = True
 
-        if (horario and (not es_festivo)):  
+        if (horario and (not es_festivo) and v_real != None):  
             ahora = datetime.now()
             if(v_real < 0.1 and (not tnp) and fin_prod <= ahora): # v<0.1 porque a veces la velocidad es 0.001 por ejemplo y no funciona bien, aunque esto se puede arreglar en el plc para forzar que se 0.0
                 tnp = True
