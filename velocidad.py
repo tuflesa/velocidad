@@ -97,8 +97,10 @@ def get_speed(linea):
                     ahora = datetime.now()
 
                     if (horario!=None):
-                        if(ahora >= inicio_prod and ahora <= fin_prod): tnp = False
-                        else: tnp = True
+                        if(ahora >= inicio_prod and ahora <= fin_prod and not (es_festivo)): 
+                            tnp = False
+                        else: 
+                            tnp = True
 
                     dato = {
                             'fecha': hoy.strftime("%Y-%m-%d"),
@@ -183,7 +185,7 @@ def get_speed(linea):
 
         if (horario and (not es_festivo)):  
             ahora = datetime.now()
-            if(v_actual < 0.1 and (not tnp) and fin_prod <= ahora): # v<0.1 porque a veces la velocidad es 0.001 por ejemplo y no funciona bien, aunque esto se puede arreglar en el plc para forzar que se 0.0
+            if(v_real < 0.1 and (not tnp) and fin_prod <= ahora): # v<0.1 porque a veces la velocidad es 0.001 por ejemplo y no funciona bien, aunque esto se puede arreglar en el plc para forzar que se 0.0
                 tnp = True
                 periodo = {
                     'zona': zona,
@@ -194,7 +196,7 @@ def get_speed(linea):
                 print('fin del tiempo de producción', periodo)
                 periodos.append(periodo)
 
-            if(v_actual < 0.1 and tnp and inicio_prod <= ahora and fin_prod >= ahora): # ver el comentario de arriba
+            if(v_real < 0.1 and tnp and inicio_prod <= ahora and fin_prod >= ahora): # ver el comentario de arriba
                 tnp = False
                 periodo = {
                     'zona': zona,
@@ -256,12 +258,3 @@ for i in range(len(lineas)):
                 name=lineas[i]['zona']['siglas'])
     threads.append(thread)
     thread.start()
-
-# def get_dword(_bytearray, byte_index):
-#    data = _bytearray[byte_index:byte_index + 4]
-#    dword = struct.unpack('>I', struct.pack('4B', *data))[0]
-#    return dword
-
-# raw_data = plc.db_read(60,0,144)
-# bd1_sup = get_dword(raw_data, 0) / 100
-# print(f'BD1_SUP Pos: {bd1_sup}')
