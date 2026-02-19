@@ -231,6 +231,7 @@ def get_speed(linea):
                     n_turnos = 1
 
                 print(f'zona {zona} cambios de turno habilitados {cambios_de_turno_habilitados} número de turnos {n_turnos} hora cambio de turno {cambio_turno_1}')
+                print(f'zona {zona} inicio prod {inicio_prod} fin prod {fin_prod}')
 
             except:
                 print('Horario: Sin conexion DB')
@@ -261,12 +262,12 @@ def get_speed(linea):
         # Tiempo no productivo = tnp
         if (horario and (not es_festivo) and v_real != None):  
             ahora = datetime.now()
-            if(v_real < 0.1 and (not tnp) and fin_prod <= ahora): # v<0.1 porque a veces la velocidad es 0.001 por ejemplo y no funciona bien, aunque esto se puede arreglar en el plc para forzar que se 0.0
+            if((not tnp) and fin_prod <= ahora):
                 tnp = True
                 cambio_tnp = True
                 print('fin del tiempo de producción', fin_prod)
 
-            if(v_real < 0.1 and tnp and inicio_prod <= ahora and fin_prod >= ahora): # ver el comentario de arriba
+            if(tnp and inicio_prod <= ahora and fin_prod >= ahora): 
                 tnp = False
                 cambio_tnp = True
                 print('En tiempo de produccion', inicio_prod)
@@ -274,7 +275,6 @@ def get_speed(linea):
         # Actualizacion del horario
         if(horario): 
             ahora = datetime.now()
-            # print(f'zona {zona} horario {horario} tnp {tnp}')
             if (inicio_prod.date() != ahora.date() and fin_prod < ahora): 
                 leerhorario = True
                 print('volver a leer horario')
