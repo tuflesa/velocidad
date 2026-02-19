@@ -117,7 +117,7 @@ def get_speed(linea):
                         else:
                             fecha_registro = inicio_prod
                     
-                    if cambio_de_turno:
+                    if cambio_de_turno and turno_activo != None:
                         fecha_registro = hora_cambio_turno
                     
                     if (not cambio_de_turno and not cambio_tnp) or arranque:
@@ -151,7 +151,8 @@ def get_speed(linea):
                         hf_freq_registro != hf_freq_registro_anterior or
                         welding_press_registro != welding_press_registro_anterior or
                         arranque or
-                        cambio_de_turno):
+                        cambio_de_turno or
+                        cambio_tnp):
 
                         arranque = False
                         cambio_de_turno = False   
@@ -265,12 +266,10 @@ def get_speed(linea):
             if((not tnp) and fin_prod <= ahora):
                 tnp = True
                 cambio_tnp = True
-                print('fin del tiempo de producción', fin_prod)
 
             if(tnp and inicio_prod <= ahora and fin_prod >= ahora): 
                 tnp = False
                 cambio_tnp = True
-                print('En tiempo de produccion', inicio_prod)
 
         # Actualizacion del horario
         if(horario): 
