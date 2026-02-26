@@ -6,8 +6,8 @@ import time
 from datetime import date, datetime, timedelta
 
 # Listado de máquinas con control de velocidad
-# SERVER = 'http://10.128.100.242:8000/'
-SERVER = 'http://localhost:8000/'
+SERVER = 'http://10.128.100.242:8000/'
+# SERVER = 'http://localhost:8000/'
 # HEADERS = {'Authorization': 'token 99c11d78d18c18c99247a0a50ede33d8e223767a'}
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
