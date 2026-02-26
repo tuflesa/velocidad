@@ -239,37 +239,32 @@ def get_speed(linea):
                 horario = None
                 leerhorario = True
 
-        # Cambio de turno
-        if (cambios_de_turno_habilitados and not tnp):
+        # Tiempo no productivo (tnp) y cambios de turno
+        if (horario and (not es_festivo) and v_real != None):  
             ahora = datetime.now()
-            if ((ahora < cambio_turno_1) or (n_turnos == 1)):
-                turno = turno_mañana
-                hora_cambio_turno = inicio_prod
-            elif ((ahora >= cambio_turno_1 and n_turnos == 2) or (n_turnos == 3 and ahora < cambio_turno_2 and ahora >= cambio_turno_1)):
-                turno = turno_tarde
-                hora_cambio_turno = cambio_turno_1
-            elif (n_turnos == 3 and ahora >= cambio_turno_2):
-                turno = turno_noche
-                hora_cambio_turno = cambio_turno_2
+            if((not tnp) and fin_prod <= ahora):  # Fin de producción
+                tnp = True
+                cambio_tnp = True
+                turno_activo = None
 
-        else:
-            turno = None
+            elif(tnp and inicio_prod <= ahora and fin_prod >= ahora):  # Inicio de producción
+                tnp = False
+                cambio_tnp = True
+                turno_activo = turno_mañana
+            
+            elif (cambios_de_turno_habilitados):
+                if((ahora >= cambio_turno_1 and n_turnos == 2) or (n_turnos == 3 and ahora < cambio_turno_2 and ahora >= cambio_turno_1)):
+                    turno = turno_tarde
+                    hora_cambio_turno = cambio_turno_1
+                elif (n_turnos == 3 and ahora >= cambio_turno_2):
+                    turno = turno_noche
+                    hora_cambio_turno = cambio_turno_2
 
         if (turno_activo != turno): # enviar periodo si hay cambio de turno
             print('Cambio de turno ...')
             turno_activo = turno
             cambio_de_turno = True
-
-        # Tiempo no productivo = tnp
-        if (horario and (not es_festivo) and v_real != None):  
-            ahora = datetime.now()
-            if((not tnp) and fin_prod <= ahora):
-                tnp = True
-                cambio_tnp = True
-
-            if(tnp and inicio_prod <= ahora and fin_prod >= ahora): 
-                tnp = False
-                cambio_tnp = True
+            
 
         # Actualizacion del horario
         if(horario): 
