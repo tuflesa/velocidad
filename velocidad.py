@@ -6,8 +6,8 @@ import time
 from datetime import date, datetime, timedelta
 
 # Listado de máquinas con control de velocidad
-SERVER = 'http://10.128.100.242:8000/'
-# SERVER = 'http://localhost:8000/'
+# SERVER = 'http://10.128.100.242:8000/'
+SERVER = 'http://localhost:8000/'
 # HEADERS = {'Authorization': 'token 99c11d78d18c18c99247a0a50ede33d8e223767a'}
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
@@ -246,22 +246,26 @@ def get_speed(linea):
             if((not tnp) and fin_prod <= ahora):  # Fin de producción
                 tnp = True
                 cambio_tnp = True
-                turno_activo = None
+                if (cambios_de_turno_habilitados):
+                    turno_activo = None
+                    turno = None
 
             elif(tnp and inicio_prod <= ahora and fin_prod >= ahora):  # Inicio de producción
                 tnp = False
                 cambio_tnp = True
-                turno_activo = turno_mañana
+                if (cambios_de_turno_habilitados):
+                    turno = turno_mañana
+                    turno_activo = turno
             
-            elif (cambios_de_turno_habilitados):
-                if((ahora >= cambio_turno_1 and n_turnos == 2) or (n_turnos == 3 and ahora < cambio_turno_2 and ahora >= cambio_turno_1)):
-                    turno = turno_tarde
-                    hora_cambio_turno = cambio_turno_1
-                elif (n_turnos == 3 and ahora >= cambio_turno_2):
-                    turno = turno_noche
-                    hora_cambio_turno = cambio_turno_2
+        if (cambios_de_turno_habilitados):
+            if((ahora >= cambio_turno_1 and n_turnos == 2) or (n_turnos == 3 and ahora < cambio_turno_2 and ahora >= cambio_turno_1)):
+                turno = turno_tarde
+                hora_cambio_turno = cambio_turno_1
+            elif (n_turnos == 3 and ahora >= cambio_turno_2):
+                turno = turno_noche
+                hora_cambio_turno = cambio_turno_2
 
-        if (turno_activo != turno): # enviar periodo si hay cambio de turno
+        if (turno_activo != turno ): # enviar periodo si hay cambio de turno
             print('Cambio de turno ...')
             turno_activo = turno
             cambio_de_turno = True
