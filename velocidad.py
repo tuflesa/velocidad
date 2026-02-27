@@ -232,9 +232,6 @@ def get_speed(linea):
                     cambios_de_turno_habilitados = True
                     n_turnos = 1
 
-                print(f'zona {zona} cambios de turno habilitados {cambios_de_turno_habilitados} número de turnos {n_turnos} hora cambio de turno {cambio_turno_1}')
-                print(f'zona {zona} inicio prod {inicio_prod} fin prod {fin_prod}')
-
             except:
                 print('Horario: Sin conexion DB')
                 horario = None
@@ -256,20 +253,27 @@ def get_speed(linea):
                 if (cambios_de_turno_habilitados):
                     turno = turno_mañana
                     turno_activo = turno
-            
+
         if (cambios_de_turno_habilitados and not tnp):
+            ahora = datetime.now()
             if((ahora >= cambio_turno_1 and n_turnos == 2) or (n_turnos == 3 and ahora < cambio_turno_2 and ahora >= cambio_turno_1)):
                 turno = turno_tarde
                 hora_cambio_turno = cambio_turno_1
             elif (n_turnos == 3 and ahora >= cambio_turno_2):
                 turno = turno_noche
                 hora_cambio_turno = cambio_turno_2
+            else:
+                turno = turno_mañana
 
-        if (turno_activo != turno ): # enviar periodo si hay cambio de turno
+        if (arranque):
             turno_activo = turno
-            if (not arranque):
-                print('Cambio de turno ...')
-                cambio_de_turno = True
+            print(f'Turno activo {turno_activo}')
+
+        elif (turno_activo != turno ): # enviar periodo si hay cambio de turno
+            print('Cambio de turno ...')
+            print(f'Turno activo {turno_activo}')
+            turno_activo = turno
+            cambio_de_turno = True
             
 
         # Actualizacion del horario
