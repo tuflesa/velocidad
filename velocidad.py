@@ -257,7 +257,7 @@ def get_speed(linea):
                     turno = turno_mañana
                     turno_activo = turno
             
-        if (cambios_de_turno_habilitados):
+        if (cambios_de_turno_habilitados and not tnp):
             if((ahora >= cambio_turno_1 and n_turnos == 2) or (n_turnos == 3 and ahora < cambio_turno_2 and ahora >= cambio_turno_1)):
                 turno = turno_tarde
                 hora_cambio_turno = cambio_turno_1
@@ -266,9 +266,10 @@ def get_speed(linea):
                 hora_cambio_turno = cambio_turno_2
 
         if (turno_activo != turno ): # enviar periodo si hay cambio de turno
-            print('Cambio de turno ...')
             turno_activo = turno
-            cambio_de_turno = True
+            if (not arranque):
+                print('Cambio de turno ...')
+                cambio_de_turno = True
             
 
         # Actualizacion del horario
