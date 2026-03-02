@@ -73,6 +73,21 @@ def get_speed(linea):
             except:
                 arranque = True
                 print(f'Máquina {siglas} Error de conexión')
+                if cambio_tnp:
+                    print('cambio tnp sin conexión PLC')
+                    cambio_tnp = False
+                    if tnp:
+                        fecha_registro = fin_prod
+                    else:
+                        fecha_registro = inicio_prod
+                    periodo = {
+                                'zona': zona,
+                                'fecha': fecha_registro,
+                                'velocidad': 0,
+                                'tnp': tnp,
+                                'turno': 0 if not turno_activo else turno_activo['id']
+                            }    
+                    periodos.append(periodo)
 
         else:
             try:
@@ -238,16 +253,16 @@ def get_speed(linea):
                 leerhorario = True
 
         # Tiempo no productivo (tnp) y cambios de turno
-        if (horario and (not es_festivo) and v_real != None):  
+        if (horario and (not es_festivo) and not arranque):  
             ahora = datetime.now()
-            if((not tnp) and fin_prod <= ahora):  # Fin de producción
+            if((not tnp) and fin_prod <= ahora and v_actual < 0.1):  # Fin de producción
                 tnp = True
                 cambio_tnp = True
                 if (cambios_de_turno_habilitados):
                     turno_activo = None
                     turno = None
 
-            elif(tnp and inicio_prod <= ahora and fin_prod >= ahora):  # Inicio de producción
+            elif(tnp and inicio_prod <= ahora and fin_prod >= ahora and v_actual < 0.1):  # Inicio de producción
                 tnp = False
                 cambio_tnp = True
                 if (cambios_de_turno_habilitados):
@@ -267,11 +282,9 @@ def get_speed(linea):
 
         if (arranque):
             turno_activo = turno
-            print(f'Turno activo {turno_activo}')
 
         elif (turno_activo != turno ): # enviar periodo si hay cambio de turno
             print('Cambio de turno ...')
-            print(f'Turno activo {turno_activo}')
             turno_activo = turno
             cambio_de_turno = True
             
