@@ -253,7 +253,7 @@ def get_speed(linea):
                 leerhorario = True
 
         # Tiempo no productivo (tnp) y cambios de turno
-        if (horario and (not es_festivo)):  
+        if (horario and (not es_festivo) and not arranque):  
             ahora = datetime.now()
             if((not tnp) and fin_prod <= ahora and v_actual < 0.1):  # Fin de producción
                 tnp = True
