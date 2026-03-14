@@ -8,7 +8,6 @@ from datetime import date, datetime, timedelta
 # Listado de máquinas con control de velocidad
 SERVER = 'http://10.128.100.242:8000/'
 # SERVER = 'http://localhost:8000/'
-# HEADERS = {'Authorization': 'token 99c11d78d18c18c99247a0a50ede33d8e223767a'}
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
 def get_speed(linea):
@@ -16,6 +15,7 @@ def get_speed(linea):
 
     arranque = True
     v_actual = 0
+    vmax_actual = 0
     hf_pot_actual = 0
     hf_freq_actual = 0
     welding_press_actual = 0
@@ -61,6 +61,9 @@ def get_speed(linea):
     NWORDS = linea['nwords']
     siglas = linea['zona']['siglas']
     zona = linea['zona']['id']
+    lectura_hf = linea['lectura_hf']
+    lectura_presion_soldadura = linea['lectura_presion_soldadura']
+    lectura_vmax_sierra = linea['lectura_vmax_sierra']
 
     plc = snap7.client.Client()
 
@@ -84,6 +87,7 @@ def get_speed(linea):
                                 'zona': zona,
                                 'fecha': fecha_registro,
                                 'velocidad': 0,
+                                'vmax': 0,
                                 'tnp': tnp,
                                 'turno': 0 if not turno_activo else turno_activo['id']
                             }    
@@ -93,21 +97,31 @@ def get_speed(linea):
             try:
                 fromPLC = plc.db_read(DB, DW, NWORDS)
                 v_real = get_real(fromPLC, 0)
-                if (NWORDS > 4):
+                
+                if lectura_hf:
                     hf_power = get_real(fromPLC, 4)
                     hf_freq = get_real(fromPLC, 8)
-                    welding_press = get_real(fromPLC, 12)
                 else:
                     hf_power = 0
                     hf_freq = 0
+
+                if lectura_presion_soldadura:
+                    welding_press = get_real(fromPLC, 12)
+                else:
                     welding_press = 0
+
+                if lectura_vmax_sierra:
+                    vmax = get_real(fromPLC, 16)
+                else:
+                    vmax = 0
 
                 inc_velocidad = abs(v_actual - v_real)
                 inc_hf_power = abs(hf_pot_actual - hf_power)
                 inc_hf_freq = abs(hf_freq_actual - hf_freq)
                 inc_welding_press = abs(welding_press_actual - welding_press)
+                inc_vmax = abs(vmax_actual - vmax)
 
-                if (inc_velocidad > 1.5 or inc_hf_power > 5 or inc_hf_freq > 5 or inc_welding_press > 5 or 
+                if (inc_velocidad > 1.5 or inc_hf_power > 5 or inc_hf_freq > 5 or inc_welding_press > 5 or inc_vmax > 0.5 or
                     arranque or cambio_de_turno or cambio_tnp):
                     v_actual = v_real
                     hf_pot_actual = hf_power
@@ -152,12 +166,14 @@ def get_speed(linea):
                             'velocidad': v_registro,
                             'potencia': hf_pot_registro,
                             'frecuencia': hf_freq_registro,
-                            'presion': welding_press_registro
+                            'presion': welding_press_registro,
+                            'vmax': vmax,
                         }
                     periodo = {
                             'zona': zona,
                             'fecha': fecha_registro,
                             'velocidad': v_registro,
+                            'vmax': vmax,
                             'tnp': tnp,
                             'turno': 0 if not turno_activo else turno_activo['id']
                         }
@@ -181,7 +197,7 @@ def get_speed(linea):
                         hf_freq_registro_anterior = hf_freq_registro
                         welding_press_registro_anterior = welding_press_registro
 
-                n_errores = 0
+                    n_errores = 0
 
             except: # Perdida conexión PLC
                 plc.disconnect()
@@ -193,12 +209,14 @@ def get_speed(linea):
                             'fecha': hoy.strftime("%Y-%m-%d"),
                             'hora': ahora.strftime("%H:%M:%S"),
                             'zona': zona,
-                            'velocidad': -1
+                            'velocidad': -1,
+                            'vmax': 0
                         }
                     periodo = {
                                 'zona': zona,
                                 'fecha': hoy.strftime("%Y-%m-%d") + ' ' + ahora.strftime("%H:%M:%S") ,
                                 'velocidad': -1, 
+                                'vmax': 0,
                                 'tnp': tnp,
                                 'turno': 0 if not turno_activo else turno_activo['id']
                             }
@@ -235,15 +253,15 @@ def get_speed(linea):
                 cambio_turno_2 = None if not cambio_turno_2_str else datetime.strptime(f"{fecha_str} {cambio_turno_2_str}", "%Y-%m-%d %H:%M:%S")
 
                 if (turno_mañana and turno_tarde and turno_noche and cambio_turno_1 and cambio_turno_2):
-                    print('Tres turnos ...')
+                    print(f'Máquina {siglas} Tres turnos ...')
                     cambios_de_turno_habilitados = True
                     n_turnos = 3
                 elif (turno_mañana and turno_tarde and cambio_turno_1):
-                    print('Dos turnos ...')
+                    print(f'Máquina {siglas} Dos turnos ...')
                     cambios_de_turno_habilitados = True
                     n_turnos = 2
                 elif (turno_mañana):
-                    print('Un turno ...')
+                    print(f'Máquina {siglas} Un turno ...')
                     cambios_de_turno_habilitados = True
                     n_turnos = 1
 
@@ -279,6 +297,7 @@ def get_speed(linea):
                 hora_cambio_turno = cambio_turno_2
             else:
                 turno = turno_mañana
+                hora_cambio_turno = inicio_prod
 
         if (arranque):
             turno_activo = turno
