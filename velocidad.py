@@ -197,7 +197,7 @@ def get_speed(linea):
                         hf_freq_registro_anterior = hf_freq_registro
                         welding_press_registro_anterior = welding_press_registro
 
-                    n_errores = 0
+                n_errores = 0
 
             except: # Perdida conexión PLC
                 plc.disconnect()
