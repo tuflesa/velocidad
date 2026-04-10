@@ -69,6 +69,22 @@ def get_speed(linea):
 
     while (True):
         if plc.get_connected() == False:
+            if cambio_tnp:
+                print('cambio tnp sin conexión PLC')
+                cambio_tnp = False
+                if tnp:
+                    fecha_registro = fin_prod
+                else:
+                    fecha_registro = inicio_prod
+                periodo = {
+                            'zona': zona,
+                            'fecha': fecha_registro,
+                            'velocidad': 0,
+                            'vmax': 0,
+                            'tnp': tnp,
+                            'turno': 0 if not turno_activo else turno_activo['id']
+                        }    
+                periodos.append(periodo)
             try:
                 plc.connect(IP, RACK, SLOT)
                 state = plc.get_cpu_state()
@@ -76,22 +92,6 @@ def get_speed(linea):
             except:
                 arranque = True
                 print(f'Máquina {siglas} Error de conexión')
-                if cambio_tnp:
-                    print('cambio tnp sin conexión PLC')
-                    cambio_tnp = False
-                    if tnp:
-                        fecha_registro = fin_prod
-                    else:
-                        fecha_registro = inicio_prod
-                    periodo = {
-                                'zona': zona,
-                                'fecha': fecha_registro,
-                                'velocidad': 0,
-                                'vmax': 0,
-                                'tnp': tnp,
-                                'turno': 0 if not turno_activo else turno_activo['id']
-                            }    
-                    periodos.append(periodo)
 
         else:
             try:
