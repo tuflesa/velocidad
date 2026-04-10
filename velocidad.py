@@ -69,7 +69,7 @@ def get_speed(linea):
 
     while (True):
         if plc.get_connected() == False:
-            if cambio_tnp:
+            if cambio_tnp and (horario!=None):
                 print('cambio tnp sin conexión PLC')
                 cambio_tnp = False
                 if tnp:
