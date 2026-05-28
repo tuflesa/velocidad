@@ -123,10 +123,14 @@ def get_speed(linea):
 
                 if (inc_velocidad > 1.5 or inc_hf_power > 5 or inc_hf_freq > 5 or inc_welding_press > 5 or inc_vmax > 0.5 or
                     arranque or cambio_de_turno or cambio_tnp):
+
+                    print(f'inc_v {inc_velocidad} inc_hf_power {inc_hf_power} inc_hf_freq {inc_hf_freq} inc_welding_press {inc_welding_press} inc_vmax {inc_vmax}')
+
                     v_actual = v_real
                     hf_pot_actual = hf_power
                     hf_freq_actual = hf_freq
                     welding_press_actual = welding_press
+                    vmax_actual=vmax
                     if (v_real > 9): # Automatico
                         v_registro = v_real
                         hf_pot_registro = hf_pot_actual
