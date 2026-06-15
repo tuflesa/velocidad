@@ -277,14 +277,17 @@ def get_speed(linea):
         # Tiempo no productivo (tnp) y cambios de turno
         if (horario and (not es_festivo)):  
             ahora = datetime.now()
-            if(((not tnp) and fin_prod <= ahora) and (v_actual < 0.1 or arranque)):  # Fin de producción
+            # print(f'condiciones tnp: {tnp} fin_prod: {fin_prod} ahora: {ahora} velocidad: {v_actual}')
+            if(((not tnp) and fin_prod <= ahora) and (v_actual < 1.5 or arranque)):  # Fin de producción
+                print('Fin de produccion ...')
                 tnp = True
                 cambio_tnp = True
                 if (cambios_de_turno_habilitados):
                     turno_activo = None
                     turno = None
 
-            elif(tnp and inicio_prod <= ahora and fin_prod >= ahora and v_actual < 0.1):  # Inicio de producción
+            elif(tnp and inicio_prod <= ahora and fin_prod >= ahora and v_actual < 1.5):  # Inicio de producción
+                print('Inicio produccion ...')
                 tnp = False
                 cambio_tnp = True
                 if (cambios_de_turno_habilitados):
