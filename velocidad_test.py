@@ -6,8 +6,8 @@ import time
 from datetime import date, datetime
 
 # Listado de máquinas con control de velocidad
-# SERVER = 'http://10.128.100.242:8000/'
-SERVER = 'http://localhost:8000/'
+SERVER = 'http://10.128.100.242:8000/'
+# SERVER = 'http://localhost:8000/'
 # HEADERS = {'Authorization': 'token 99c11d78d18c18c99247a0a50ede33d8e223767a'}
 HEADERS = {'Authorization': 'token 7e3f7c728e4b6c68de306db3da6e321f43222201'}
 
@@ -100,19 +100,22 @@ try:
         headers = HEADERS
     )
     lineas = lineas.json()
-    print(lineas)
+    # print(lineas)
 except:
     print('Sin conexion DB')
     lineas = []
 
+mtb7 = [l for l in lineas if l['zona']['siglas']=='MTB7'][0]
+print(mtb7)
+get_speed(mtb7)
 
-threads = []
-for i in range(len(lineas)):
-    thread = threading.Thread(target=get_speed, 
-                args=(lineas[i],), 
-                name=lineas[i]['zona']['siglas'])
-    threads.append(thread)
-    thread.start()
+# threads = []
+# for i in range(len(lineas)):
+#     thread = threading.Thread(target=get_speed, 
+#                 args=(lineas[i],), 
+#                 name=lineas[i]['zona']['siglas'])
+#     threads.append(thread)
+#     thread.start()
 
 # def get_dword(_bytearray, byte_index):
 #    data = _bytearray[byte_index:byte_index + 4]
