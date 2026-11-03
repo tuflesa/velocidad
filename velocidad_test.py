@@ -65,6 +65,7 @@ def get_speed(linea):
                         arranque = False    
                         datos.append(dato)
                         v_registro_anterior = v_registro
+                    print(dato)
             except:
                 plc.disconnect()
                 # plc_conectado = False
@@ -79,18 +80,18 @@ def get_speed(linea):
                 datos.append(dato)
                 print(f'Añadir dato: {dato}')
         
-        if (len(datos) > 0):
-            try:
-                r = requests.post(SERVER + 'api/velocidad/registro/', 
-                    data = datos[0],
-                    headers = HEADERS
-                    )
-                if(r.status_code == 201):
-                    datos.pop(0)
-                    print(f'DB actualizada {siglas}')
-            except:
-                print('Error al escribir DB')
-            print(f'Datos pendientes de enviar: {len(datos)}')
+        # if (len(datos) > 0):
+        #     try:
+        #         r = requests.post(SERVER + 'api/velocidad/registro/', 
+        #             data = datos[0],
+        #             headers = HEADERS
+        #             )
+        #         if(r.status_code == 201):
+        #             datos.pop(0)
+        #             print(f'DB actualizada {siglas}')
+        #     except:
+        #         print('Error al escribir DB')
+        #     print(f'Datos pendientes de enviar: {len(datos)}')
 
         time.sleep(20)    
     # threading.Timer(1,get_speed, [automata, maquina, on]).start()
