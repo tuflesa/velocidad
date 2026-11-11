@@ -131,7 +131,7 @@ def get_speed(linea):
                     hf_freq_actual = hf_freq
                     welding_press_actual = welding_press
                     vmax_actual=vmax
-                    if (v_real > 9): # Automatico
+                    if (v_real > 5): # Automatico
                         v_registro = v_real
                         hf_pot_registro = hf_pot_actual
                         hf_freq_registro = hf_freq_actual
