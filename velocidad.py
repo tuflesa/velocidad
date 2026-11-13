@@ -64,6 +64,7 @@ def get_speed(linea):
     lectura_hf = linea['lectura_hf']
     lectura_presion_soldadura = linea['lectura_presion_soldadura']
     lectura_vmax_sierra = linea['lectura_vmax_sierra']
+    inc_min = linea['incremento_minimo_velocidad']
 
     plc = snap7.client.Client()
 
@@ -121,7 +122,7 @@ def get_speed(linea):
                 inc_welding_press = abs(welding_press_actual - welding_press)
                 inc_vmax = abs(vmax_actual - vmax)
 
-                if (inc_velocidad > 1.5 or inc_hf_power > 5 or inc_hf_freq > 5 or inc_welding_press > 5 or inc_vmax > 0.5 or
+                if (inc_velocidad > inc_min or inc_hf_power > 5 or inc_hf_freq > 5 or inc_welding_press > 5 or inc_vmax > 0.5 or
                     arranque or cambio_de_turno or cambio_tnp):
 
                     print(f'inc_v {inc_velocidad} inc_hf_power {inc_hf_power} inc_hf_freq {inc_hf_freq} inc_welding_press {inc_welding_press} inc_vmax {inc_vmax}')

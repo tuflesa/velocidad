@@ -26,6 +26,7 @@ def get_speed(linea):
     DW = linea['dw'] 
     siglas = linea['zona']['siglas']
     zona = linea['zona']['id']
+    inc_min = linea['incremento_minimo_velocidad']
 
     plc = snap7.client.Client()
 
@@ -47,7 +48,7 @@ def get_speed(linea):
                 v_real = struct.unpack('>f', struct.pack('4B', *v_raw))[0]
                 inc_velocidad = abs(v_actual - v_real)
 
-                if (inc_velocidad > 1.5 or arranque):
+                if (inc_velocidad > inc_min or arranque):
                     v_actual = v_real
                     if (v_real > 9.5):
                         v_registro = v_real
